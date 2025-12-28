@@ -20,13 +20,12 @@ public class MyUserDetailService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public  UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Users user = userRepo.findByEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + username));
-        // return a Spring Security User (implements UserDetails)
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
-                "", // password not present in entity; replace with actual password field when available
+                "",
                 Collections.emptyList()
         );
     }

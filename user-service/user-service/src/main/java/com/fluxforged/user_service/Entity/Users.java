@@ -26,14 +26,13 @@ public class Users implements UserDetails {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "tenant_id", nullable = false)
+    @Column(name = "tenant_id", nullable = false, updatable = false)
     private UUID tenantId;
 
-    @Column(nullable = false,unique = true)
+    @Column(nullable = false, unique = true)
     private String email;
 
-
-    @Column(nullable = false,unique = true)
+    @Column(nullable = false, unique = true)
     private String username;
 
     @Column(nullable = false)
@@ -46,20 +45,21 @@ public class Users implements UserDetails {
     private Roles role;
 
     @Column(nullable = false)
-    private String Status;
+    private String status;
 
     @Column(name = "created_at", nullable = false)
     private Timestamp createdAt;
 
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singleton(new SimpleGrantedAuthority("ROLE_"+role));
+    @PrePersist
+    public void generateTenantId() {
+        if (tenantId == null) {
+            tenantId = UUID.randomUUID();
+        }
     }
 
     @Override
-    public String getPassword() {
-        return password;
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return Collections.singleton(new SimpleGrantedAuthority("ROLE_" + role));
     }
 
     @Override
@@ -67,25 +67,9 @@ public class Users implements UserDetails {
         return email;
     }
 
-
     @Override
-    public boolean isAccountNonExpired() {
-        return true;
+    public String getPassword()
+    {
+        return password;
     }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return true;
-    }
-
 }

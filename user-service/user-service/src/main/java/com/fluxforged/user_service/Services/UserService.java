@@ -59,4 +59,17 @@ return user;
         return dto;
 
     }
+
+
+    public ResponseDTO signIn(UserDTO userDTO) {
+        Optional<Users> userEmail = userRepo.findByEmail(userDTO.getEmail());
+        if (userEmail.isEmpty()) {
+            return new ResponseDTO("Invalid Email");
+        }
+        Users user = userEmail.get();
+        if (!passwordEncoder.matches(userDTO.getPassword(), user.getPassword())) {
+            return new ResponseDTO("Invalid Password");
+        }
+        return new ResponseDTO("Login Successful");
+    }
 }

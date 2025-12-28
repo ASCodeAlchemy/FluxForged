@@ -41,12 +41,12 @@ public class SecurityConfig {
                 .cors(cors -> {
                 })
                 .csrf(customizer -> customizer.disable())
-                .authorizeHttpRequests(request -> request.requestMatchers("/api/users/register").permitAll().anyRequest().authenticated())
+                .authorizeHttpRequests(request -> request.requestMatchers("/register","/login").permitAll().anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
                 .authenticationProvider(authProvider())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                .logout(logout -> logout.logoutUrl("/api/logout").deleteCookies("jwt").logoutSuccessHandler((request, response, authentication) -> {
+                .logout(logout -> logout.logoutUrl("/logout").deleteCookies("jwt").logoutSuccessHandler((request, response, authentication) -> {
                         })
                 )
                 .build();

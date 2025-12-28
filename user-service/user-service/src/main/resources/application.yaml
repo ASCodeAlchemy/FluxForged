@@ -2,8 +2,23 @@ spring:
   application:
     name: user-service
 
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/fluxUser
+    username: postgres
+    password: root204
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+
+
+
   security:
-    EXPIRATION: 3000
+    EXPIRATION: 3600000
     SECRET_KEY: cCd8F0jjX/cYQvSUWvVO8ipDrO/4fd1iEgNTCwWDjMxneZcK1OwRj/Mgn3gDyBoPo7YZS+hyUBi6Scd2LrKJLw==
 server:
   port: 8081

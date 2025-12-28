@@ -16,7 +16,6 @@ import java.util.UUID;
 public class UserDTO {
 
     private UUID id;
-    private UUID tenant_id;
     private String fullName;
     private String username;
     private String email;
