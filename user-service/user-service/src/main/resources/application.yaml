@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: user-service
+
+  security:
+    EXPIRATION: 3000
+    SECRET_KEY: cCd8F0jjX/cYQvSUWvVO8ipDrO/4fd1iEgNTCwWDjMxneZcK1OwRj/Mgn3gDyBoPo7YZS+hyUBi6Scd2LrKJLw==
+server:
+  port: 8081
+
+
+eureka:
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
