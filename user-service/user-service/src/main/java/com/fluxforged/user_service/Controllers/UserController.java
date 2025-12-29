@@ -11,6 +11,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -61,5 +64,17 @@ public class UserController {
             responseDto.setMessage("Login Successful");
         }
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
+    }
+
+
+
+    @GetMapping("/test")
+    public ResponseDTO msg(@AuthenticationPrincipal UserDetails userDetails){
+        if(userDetails==null || userDetails.getUsername().isEmpty()){
+throw new IllegalArgumentException(("Unauthorized"));
+        }
+
+        return userService.msg();
+
     }
 }

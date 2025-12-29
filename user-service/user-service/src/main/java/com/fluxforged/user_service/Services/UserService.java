@@ -72,4 +72,13 @@ return user;
         }
         return new ResponseDTO("Login Successful");
     }
+
+
+
+    public ResponseDTO msg(){
+        ResponseDTO res = new ResponseDTO();
+        res.setMessage("This is Protected Route");
+
+        return res;
+    }
 }
