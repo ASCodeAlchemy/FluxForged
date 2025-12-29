@@ -1,4 +1,7 @@
 spring:
+  application:
+    name: Gateway
+
   cloud:
     gateway:
       server:
@@ -12,9 +15,14 @@ spring:
                 - StripPrefix=1
                 - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
 
+jwt:
 
+  secret: cCd8F0jjX/cYQvSUWvVO8ipDrO/4fd1iEgNTCwWDjMxneZcK1OwRj/Mgn3gDyBoPo7YZS+hyUBi6Scd2LrKJLw==
 
 eureka:
   client:
     register-with-eureka: true
     fetch-registry: true
+
+server:
+  port: 8080

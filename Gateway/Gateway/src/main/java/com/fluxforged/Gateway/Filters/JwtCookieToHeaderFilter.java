@@ -25,7 +25,7 @@ public class JwtCookieToHeaderFilter extends AbstractGatewayFilterFactory<JwtCoo
             ServerHttpRequest request = exchange.getRequest();
             String path = request.getURI().getPath();
 
-            // Public endpoints
+
             if (path.startsWith("/auth")) {
                 return chain.filter(exchange);
             }
