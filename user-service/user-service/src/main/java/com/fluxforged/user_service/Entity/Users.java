@@ -44,8 +44,7 @@ public class Users implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Roles role;
 
-    @Column(nullable = false)
-    private String status;
+    private String bio;
 
     @Column(name = "created_at", nullable = false)
     private Timestamp createdAt;

@@ -3,7 +3,9 @@ package com.fluxforged.user_service.Controllers;
 
 import com.fluxforged.user_service.Config.JWTService;
 import com.fluxforged.user_service.Config.MyUserDetailService;
+import com.fluxforged.user_service.DTOs.RequestDTO.ChangePasswordDTO;
 import com.fluxforged.user_service.DTOs.RequestDTO.UserDTO;
+import com.fluxforged.user_service.DTOs.RequestDTO.UserProfileDTO;
 import com.fluxforged.user_service.DTOs.ResponseDTO.ResponseDTO;
 import com.fluxforged.user_service.Services.UserService;
 import jakarta.servlet.http.Cookie;
@@ -13,10 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class UserController {
@@ -66,15 +65,39 @@ public class UserController {
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 
+    @GetMapping("/my-profile")
+    public ResponseEntity<UserProfileDTO> getProfile(@AuthenticationPrincipal UserDetails userDetails) {
+        if(userDetails == null)
+        {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        String email = userDetails.getUsername();
+        UserProfileDTO profile = userService.getProfile(email);
+        return new ResponseEntity<>(profile, HttpStatus.OK);
+    }
 
 
-    @GetMapping("/test")
-    public ResponseDTO msg(@AuthenticationPrincipal UserDetails userDetails){
-        if(userDetails==null || userDetails.getUsername().isEmpty()){
-throw new IllegalArgumentException(("Unauthorized"));
+    @PostMapping("/update-profile")
+    public ResponseEntity<ResponseDTO> updateProfile(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody UserDTO userDTO) {
+
+        if (userDetails == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
-        return userService.msg();
+        String email = userDetails.getUsername();
+        ResponseDTO response = userService.updateProfile(email, userDTO);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 
+    @PutMapping("/change-password")
+    public ResponseEntity<ResponseDTO> changePassword(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody ChangePasswordDTO changePasswordDTO
+    ) {
+        if(userDetails == null)
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        return new ResponseEntity<>(userService.changePassword(userDetails.getUsername(), changePasswordDTO), HttpStatus.OK);
     }
 }

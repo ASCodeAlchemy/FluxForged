@@ -4,53 +4,44 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @Service
 public class PipelineService {
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final KafkaTemplate<String, String> kafkaTemplate;
     private final StorageService storageService;
 
-
-    public PipelineService(KafkaTemplate<String, Object> kafkaTemplate, StorageService storageService) {
+    public PipelineService(KafkaTemplate<String, String> kafkaTemplate, StorageService storageService) {
         this.kafkaTemplate = kafkaTemplate;
         this.storageService = storageService;
     }
-    private String convertToZipUrl(String repoUrl) {
-
-
-        String apiBase = repoUrl.replace("https://github.com/", "https://api.github.com/repos/");
-
-
-        return apiBase + "/zipball/main";
-    }
-
 
     public void initiateFromGithub(String repoUrl) {
-
         String zipUrl = convertToZipUrl(repoUrl);
-
-
         String storageKey = storageService.saveFromUrl(zipUrl);
 
-        triggerEvent(storageKey, "GITHUB");
+        triggerEvent(storageKey); // simplified
     }
 
     public void initiateFromZip(MultipartFile file) {
-
         String storageKey = storageService.saveFile(file);
 
-        triggerEvent(storageKey, "MANUAL_UPLOAD");
+        triggerEvent(storageKey); // simplified
     }
 
-    private void triggerEvent(String storageKey, String source) {
-        Map<String, Object> event = new HashMap<>();
-        event.put("storageKey", storageKey);
-        event.put("sourceType", source);
-        event.put("status", "QUEUED");
+    private void triggerEvent(String storageKey) {
+        // Generate a unique runId for this pipeline run
+        String runId = java.util.UUID.randomUUID().toString();
 
-        kafkaTemplate.send("pipeline-events", event);
+        // Kafka message format: storageKey:runId
+        String message = storageKey + ":" + runId;
+
+        kafkaTemplate.send("pipeline-events", message);
+
+        System.out.println("Kafka message sent: " + message);
+    }
+
+    private String convertToZipUrl(String repoUrl) {
+        String apiBase = repoUrl.replace("https://github.com/", "https://api.github.com/repos/");
+        return apiBase + "/zipball/main";
     }
 }

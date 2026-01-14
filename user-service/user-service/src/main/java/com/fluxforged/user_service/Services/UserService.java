@@ -1,12 +1,16 @@
 package com.fluxforged.user_service.Services;
 
+import com.fluxforged.user_service.DTOs.RequestDTO.ChangePasswordDTO;
 import com.fluxforged.user_service.DTOs.RequestDTO.UserDTO;
+import com.fluxforged.user_service.DTOs.RequestDTO.UserProfileDTO;
 import com.fluxforged.user_service.DTOs.ResponseDTO.ResponseDTO;
 import com.fluxforged.user_service.Entity.Users;
 import com.fluxforged.user_service.Repositories.UserRepo;
 import com.fluxforged.user_service.Enums.Roles;
 
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -39,7 +43,6 @@ user.setEmail(userDTO.getEmail());
     user.setRole(Roles.valueOf(userDTO.getRole().toUpperCase()));
 
 user.setCreatedAt(new Timestamp(System.currentTimeMillis()));
-user.setStatus(userDTO.getStatus());
 user.setUsername(userDTO.getUsername());
 
 return user;
@@ -73,12 +76,43 @@ return user;
         return new ResponseDTO("Login Successful");
     }
 
+    public UserProfileDTO getProfile(String email) {
 
-
-    public ResponseDTO msg(){
-        ResponseDTO res = new ResponseDTO();
-        res.setMessage("This is Protected Route");
-
-        return res;
+        Users user = userRepo.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found currently logged in"));
+        return new UserProfileDTO(
+                user.getId(),
+                user.getTenantId(),
+                user.getFullName(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getBio(),
+                user.getRole(),
+                user.getCreatedAt()
+        );
     }
+    public ResponseDTO updateProfile(String email, UserDTO updatedData) {
+        Users user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found currently logged in."));
+
+        if (updatedData.getFullName() != null && !updatedData.getFullName().isEmpty()) {
+            user.setFullName(updatedData.getFullName());
+        }
+        if (updatedData.getBio() != null) {
+            user.setBio(updatedData.getBio());
+        }
+        userRepo.save(user);
+        return new ResponseDTO("Profile updated successfully");
+    }
+    @Transactional
+    public ResponseDTO changePassword(String email, ChangePasswordDTO passwordDTO) {
+        Users user = userRepo.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found currently logged in."));
+        if(!passwordEncoder.matches(passwordDTO.getOldPassword(), user.getPassword()))
+        {
+            throw new IllegalArgumentException("Incorrect password.");
+        }
+        user.setPassword(passwordEncoder.encode(passwordDTO.getNewPassword()));
+        return new ResponseDTO("Password changed successfully");
+    }
+
+
 }
