@@ -28,11 +28,13 @@ public class SecurityConfig {
 
     private final UserDetailsService userDetailsService;
     private final JWTFilter jwtFilter;
+    private final GatewayHeaderAuthFilter gatewayHeaderAuthFilter;
 
     @Autowired
-    public SecurityConfig(UserDetailsService userDetailsService, JWTFilter jwtFilter) {
+    public SecurityConfig(UserDetailsService userDetailsService, JWTFilter jwtFilter,GatewayHeaderAuthFilter gatewayHeaderAuthFilter) {
         this.userDetailsService = userDetailsService;
         this.jwtFilter = jwtFilter;
+        this.gatewayHeaderAuthFilter=gatewayHeaderAuthFilter;
     }
 
     @Bean
@@ -41,11 +43,11 @@ public class SecurityConfig {
                 .cors(cors -> {
                 })
                 .csrf(customizer -> customizer.disable())
-                .authorizeHttpRequests(request -> request.requestMatchers("/register","/login").permitAll().anyRequest().authenticated())
+                .authorizeHttpRequests(request -> request.requestMatchers("/register","/auth/login","/verify-otp","/verify-register-otp").permitAll().anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
                 .authenticationProvider(authProvider())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(gatewayHeaderAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .logout(logout -> logout.logoutUrl("/logout").deleteCookies("jwt").logoutSuccessHandler((request, response, authentication) -> {
                         })
                 )

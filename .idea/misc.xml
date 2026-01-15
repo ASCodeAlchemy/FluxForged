@@ -12,6 +12,7 @@
         <option value="$PROJECT_DIR$/Gateway/Gateway/pom.xml" />
         <option value="$PROJECT_DIR$/pipeline service/pipeline-service/pom.xml" />
         <option value="$PROJECT_DIR$/worker-service/worker-service/pom.xml" />
+        <option value="$PROJECT_DIR$/notification-service/notification-service/pom.xml" />
       </list>
     </option>
   </component>

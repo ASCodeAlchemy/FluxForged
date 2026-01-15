@@ -23,10 +23,13 @@ public class UserService {
     private final UserRepo userRepo;
     private final PasswordEncoder passwordEncoder;
 
+
+
     @Autowired
     public UserService(UserRepo userRepo, PasswordEncoder passwordEncoder) {
         this.userRepo = userRepo;
         this.passwordEncoder = passwordEncoder;
+
     }
 
 
@@ -65,30 +68,32 @@ return user;
 
 
     public ResponseDTO signIn(UserDTO userDTO) {
-        Optional<Users> userEmail = userRepo.findByEmail(userDTO.getEmail());
-        if (userEmail.isEmpty()) {
-            return new ResponseDTO("Invalid Email");
-        }
-        Users user = userEmail.get();
+        Users user = userRepo.findByEmail(userDTO.getEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("Invalid Email"));
+
         if (!passwordEncoder.matches(userDTO.getPassword(), user.getPassword())) {
-            return new ResponseDTO("Invalid Password");
+            throw new IllegalArgumentException("Invalid Password");
         }
-        return new ResponseDTO("Login Successful");
+
+        return new ResponseDTO("Password verified. OTP sent.");
     }
+
 
     public UserProfileDTO getProfile(String email) {
 
         Users user = userRepo.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found currently logged in"));
-        return new UserProfileDTO(
-                user.getId(),
-                user.getTenantId(),
-                user.getFullName(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getBio(),
-                user.getRole(),
-                user.getCreatedAt()
-        );
+
+        UserProfileDTO dto = new UserProfileDTO();
+        dto.setId(user.getId());
+        dto.setTenantId(user.getTenantId());
+        dto.setFullName(user.getFullName());
+        dto.setUsername(user.getUsername());
+        dto.setEmail(user.getEmail());
+        dto.setBio(user.getBio());
+        dto.setRole(user.getRole());
+        dto.setCreatedAt(user.getCreatedAt());
+
+        return dto;
     }
     public ResponseDTO updateProfile(String email, UserDTO updatedData) {
         Users user = userRepo.findByEmail(email)
@@ -113,6 +118,11 @@ return user;
         user.setPassword(passwordEncoder.encode(passwordDTO.getNewPassword()));
         return new ResponseDTO("Password changed successfully");
     }
+
+    public boolean emailExists(String email) {
+        return userRepo.findByEmail(email).isPresent();
+    }
+
 
 
 }

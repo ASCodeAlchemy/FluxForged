@@ -8,67 +8,113 @@ import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.Volume;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
+import lombok.RequiredArgsConstructor;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class BuildExecutorService {
     private final DockerClient dockerClient;
     private final MinioClient minioClient;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    public BuildExecutorService(DockerClient dockerClient, MinioClient minioClient) {
-        this.dockerClient = dockerClient;
-        this.minioClient = minioClient;
-    }
-
-    public void executePipeline(String storageKey, String runId) {
+    public void executePipeline(String storageKey, String runId, String userEmail, String projectName) {
+        boolean success = false;
         try {
 
             InputStream zipStream = minioClient.getObject(
                     GetObjectArgs.builder().bucket("fluxforge-source").object(storageKey).build()
             );
 
-            File workspace = new File("/tmp/builds/" + runId);
+
+            File workspace = new File(System.getProperty("java.io.tmpdir"), "fluxforge/" + runId);
             workspace.mkdirs();
             unzip(zipStream, workspace);
 
-            String containerId = dockerClient.createContainerCmd("maven:3.9.1-eclipse-temurin-17")
+
+            File pomLocation = findPomXml(workspace);
+            if (pomLocation == null) {
+                throw new RuntimeException("No pom.xml found anywhere in the uploaded zip!");
+            }
+
+            File projectRoot = pomLocation.getParentFile();
+
+            System.out.println("Project Root identified at: " + projectRoot.getAbsolutePath());
+
+
+            String containerId = dockerClient.createContainerCmd("maven:3.9.5-eclipse-temurin-21")
                     .withHostConfig(HostConfig.newHostConfig()
-                            .withBinds(new Bind(workspace.getAbsolutePath(), new Volume("/app"))))
+                            // Mount the ACTUAL project root to /app
+                            .withBinds(new Bind(projectRoot.getAbsolutePath(), new Volume("/app"))))
                     .withWorkingDir("/app")
                     .withCmd("mvn", "clean", "compile")
                     .exec()
                     .getId();
 
+
+
+
             dockerClient.startContainerCmd(containerId).exec();
-
-            dockerClient.waitContainerCmd(containerId).start().awaitStatusCode();
-
-            System.out.println("Build container finished: " + containerId);
 
 
             dockerClient.logContainerCmd(containerId)
                     .withStdOut(true)
                     .withStdErr(true)
                     .withFollowStream(true)
-                    .exec(new ResultCallback.Adapter<Frame>(){
+                    .exec(new ResultCallback.Adapter<Frame>() {
                         @Override
                         public void onNext(Frame item) {
-                            String logLine = new String(item.getPayload());
-                            System.out.print(logLine);
+                            System.out.print(new String(item.getPayload()));
                         }
-
-                    }).awaitCompletion();
-
+                    });
 
 
+            int exitCode = dockerClient.waitContainerCmd(containerId)
+                    .start()
+                    .awaitStatusCode();
+
+            success = (exitCode == 0);
+            System.out.println("Build finished with exit code: " + exitCode);
 
         } catch (Exception e) {
             e.printStackTrace();
+            success = false;
+        } finally {
+
+            finishBuild(runId, userEmail, projectName, success);
         }
+    }
+
+    public void finishBuild(String runId, String userEmail, String projectName, boolean success) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("runId", runId);
+        result.put("userEmail", userEmail);
+        result.put("projectName", projectName);
+        result.put("status", success ? "SUCCESS" : "FAILED");
+        result.put("logs", success ? "Build completed successfully." : "Build failed during compilation.");
+
+        kafkaTemplate.send("build-results", runId, result);
+    }
+
+    private File findPomXml(File root) {
+        if (root.getName().equals("pom.xml")) return root;
+        if (root.isDirectory()) {
+            File[] files = root.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    File found = findPomXml(file);
+                    if (found != null) return found;
+                }
+            }
+        }
+        return null;
     }
 
     private void unzip(InputStream is, File targetDir) throws IOException {
