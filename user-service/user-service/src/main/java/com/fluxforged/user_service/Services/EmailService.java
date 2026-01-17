@@ -22,41 +22,61 @@ public class EmailService {
 
 
         String htmlContent = """
-    <div style="background-color: #fafafa; padding: 50px 20px; font-family: 'Segoe UI', Helvetica, Arial, sans-serif;">
-        <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e1e4e8; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
-            
-            <div style="background-color: #0d1117; padding: 30px; text-align: center;">
-                <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">
-                    FLUX<span style="color: #2f81f7;">FORGED</span>
-                </h1>
-            </div>
+<div style="background-color:#f4f6f8; padding:60px 20px; font-family:'Segoe UI', Helvetica, Arial, sans-serif;">
+    <div style="max-width:520px; margin:0 auto; background-color:#ffffff; border-radius:14px;
+                border:1px solid #d8dee4; box-shadow:0 12px 30px rgba(0,0,0,0.08); overflow:hidden;">
 
-            <div style="padding: 40px 30px; text-align: center;">
-                <h2 style="color: #1f2328; margin-top: 0; font-size: 20px; font-weight: 600;">Verify your email address</h2>
-                <p style="color: #57606a; font-size: 15px; line-height: 1.6; margin-bottom: 30px;">
-                    To complete your setup on <strong>FluxForged</strong>, please use the security code below. This ensures your account stays protected.
-                </p>
-
-                <div style="background-color: #f6f8fa; border: 1px solid #d0d7de; border-radius: 8px; 
-                            font-size: 36px; font-family: 'Courier New', monospace; font-weight: 700; 
-                            color: #0d1117; padding: 20px; margin: 20px auto; width: fit-content; 
-                            letter-spacing: 8px; color: #2f81f7;">
-                    %s
-                </div>
-
-                <p style="color: #8c959f; font-size: 13px; margin-top: 30px;">
-                    This verification code will expire in <span style="color: #cf222e; font-weight: 600;">10 minutes</span>.
-                </p>
-            </div>
-
-            <div style="background-color: #f6f8fa; padding: 20px; text-align: center; border-top: 1px solid #e1e4e8;">
-                <p style="color: #57606a; font-size: 12px; margin: 0;">
-                    &copy; 2026 FluxForged Cloud-Native Systems.<br>
-                    You received this because an account was registered with this email.
-                </p>
-            </div>
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg, #0d1117, #161b22); padding:32px; text-align:center;">
+            <h1 style="margin:0; font-size:26px; font-weight:700; color:#ffffff; letter-spacing:-0.5px;">
+                FLUX<span style="color:#2f81f7;">FORGED</span>
+            </h1>
+            <p style="margin:8px 0 0; font-size:13px; color:#8b949e;">
+                Secure Cloud-Native Platform
+            </p>
         </div>
+
+        <!-- Body -->
+        <div style="padding:40px 34px; text-align:center;">
+            <h2 style="margin:0 0 12px; font-size:22px; font-weight:600; color:#1f2328;">
+                Email Verification Required
+            </h2>
+
+            <p style="margin:0 0 28px; font-size:15px; line-height:1.7; color:#57606a;">
+                Thank you for choosing <strong>FluxForged</strong>.
+                Please confirm your email address by entering the verification code below.
+                This step helps us keep your account secure.
+            </p>
+
+            <!-- Verification Code -->
+            <div style="background-color:#f6f8fa; border:1px solid #d0d7de; border-radius:10px;
+                        padding:22px 28px; display:inline-block; margin:10px auto 20px;">
+                <span style="font-family:'Courier New', monospace; font-size:36px; font-weight:700;
+                             letter-spacing:10px; color:#2f81f7;">
+                    %s
+                </span>
+            </div>
+
+            <p style="margin:20px 0 0; font-size:13px; color:#8c959f;">
+                This verification code will expire in
+                <strong style="color:#cf222e;">10 minutes</strong>.
+            </p>
+
+            <p style="margin:26px 0 0; font-size:13px; color:#8c959f;">
+                If you did not request this email, you can safely ignore it.
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color:#f6f8fa; border-top:1px solid #e1e4e8; padding:22px; text-align:center;">
+            <p style="margin:0; font-size:12px; color:#57606a; line-height:1.5;">
+                © 2026 FluxForged Cloud-Native Systems<br>
+                This message was sent because an account was registered using this email address.
+            </p>
+        </div>
+
     </div>
+</div>
 """.formatted(code);
 
         helper.setText(htmlContent, true);

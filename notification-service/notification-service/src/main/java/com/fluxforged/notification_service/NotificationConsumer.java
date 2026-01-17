@@ -23,7 +23,7 @@ public class NotificationConsumer {
 
         String subject = "STARTED".equalsIgnoreCase(status) ?
                 "🚀 FluxForged: Pipeline Started" :
-                "✅ FluxForged: Build Success";
+                "✅ FluxForged: Build Status";
 
         String html = templateEngine.getPipelineEmailTemplate(
                 projectName,
@@ -35,16 +35,32 @@ public class NotificationConsumer {
         emailService.sendHtmlEmail(userEmail, subject, html);
         System.out.println("Email successfully sent to: " + userEmail);
     }
-
-    @KafkaListener(topics = "auth-events", groupId = "notification-group")
+    @KafkaListener(topics = "auth-events", groupId = "notification-group-new")
     public void consumeAuthEvent(AuthEvent event) {
-        String html = "";
-        if ("REGISTER".equals(event.getType())) {
-            html = templateEngine.getRegisterTemplate(event.getOtp());
-        } else {
-            html = templateEngine.getLoginTemplate(event.getOtp());
+        if (event == null || event.getType() == null) {
+            System.out.println("Received empty or invalid AuthEvent");
+            return;
         }
 
-        emailService.sendHtmlEmail(event.getEmail(), "FluxForged Security Code", html);
+        String html;
+        String subject;
+
+        switch (event.getType()) {
+            case "REGISTER_OTP" -> {
+                subject = "FluxForged: Verify your email";
+                html = templateEngine.getRegisterTemplate(event.getOtp());
+            }
+            case "REGISTER_SUCCESS" -> {
+                subject = "Welcome to FluxForged! 🚀";
+                html = templateEngine.getWelcomeTemplate(event.getEmail());
+            }
+            default -> {
+                subject = "FluxForged Security Code";
+                html = templateEngine.getLoginTemplate(event.getOtp());
+            }
+        }
+
+        emailService.sendHtmlEmail(event.getEmail(), subject, html);
+        System.out.println("Email sent successfully: " + subject + " to " + event.getEmail());
     }
 }

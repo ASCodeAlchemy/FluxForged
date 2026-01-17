@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -26,16 +27,19 @@ public class UserController {
     private final OTPService otpService;
     private final EmailService emailService;
     private final PendingUserService pendingUserService;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Autowired
     public UserController(UserService userService, JWTService jwtService, MyUserDetailService myUserDetailService,
-                          OTPService otpService, EmailService emailService, PendingUserService pendingUserService) {
+                          OTPService otpService, EmailService emailService, PendingUserService pendingUserService, KafkaTemplate kafkaTemplate) {
         this.userService = userService;
         this.jwtService = jwtService;
         this.myUserDetailService = myUserDetailService;
         this.otpService = otpService;
         this.emailService = emailService;
         this.pendingUserService = pendingUserService;
+        this.kafkaTemplate=kafkaTemplate;
+
     }
 
     @PostMapping("/register")
@@ -58,6 +62,9 @@ public class UserController {
         return ResponseEntity.ok(new ResponseDTO("OTP sent to email for verification"));
     }
 
+
+
+
     @PostMapping("/verify-register-otp")
     public ResponseEntity<ResponseDTO> verifyRegisterOtp(@RequestBody OtpDTO otpDTO) throws Exception {
         String otp = otpDTO.getOtp();
@@ -72,9 +79,18 @@ public class UserController {
             return ResponseEntity.badRequest().body(new ResponseDTO("Registration session expired"));
         }
 
+        // 1. Core Logic: Save user to DB
         userService.signUp(pendingUser);
         pendingUserService.remove(email);
         otpService.removeOtp(otp);
+
+        // 2. TRIGGER: Send the Welcome Email Event
+        AuthEvent welcomeEvent = new AuthEvent();
+        welcomeEvent.setEmail(email);
+        welcomeEvent.setType("REGISTER_SUCCESS");
+
+        // We send this to the "auth-events" topic
+        kafkaTemplate.send("auth-events", email, welcomeEvent);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(new ResponseDTO("User registered successfully"));
     }

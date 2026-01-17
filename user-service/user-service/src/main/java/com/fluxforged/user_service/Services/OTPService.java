@@ -1,20 +1,21 @@
 package com.fluxforged.user_service.Services;
 
+import com.fluxforged.user_service.DTOs.RequestDTO.AuthEvent;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.Random;
 
 @Service
+@RequiredArgsConstructor
 public class OTPService {
 
     private final StringRedisTemplate redisTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
     private static final int OTP_EXPIRATION_MINUTES = 10;
-
-    public OTPService(StringRedisTemplate redisTemplate) {
-        this.redisTemplate = redisTemplate;
-    }
 
 
     public String generateOtp(String email) {
@@ -42,8 +43,22 @@ public class OTPService {
         String email = getEmailByOtp(otp);
         if (email == null) return null;
 
+        // 1. Clear the OTP from Redis
         redisTemplate.delete("otp:" + otp);
+
+        // 2. TRIGGER THE WELCOME EMAIL EVENT
+        // We do this here because we know the verification is successful
+        sendWelcomeEmailEvent(email);
+
         return email;
+    }
+
+    private void sendWelcomeEmailEvent(String email) {
+        AuthEvent welcomeEvent = new AuthEvent();
+        welcomeEvent.setEmail(email);
+        welcomeEvent.setType("REGISTER_SUCCESS");
+
+        kafkaTemplate.send("auth-events", email, welcomeEvent);
     }
 
 
