@@ -21,6 +21,15 @@ spring:
             - JwtCookieToHeaderFilter
             - StripPrefix=1
 
+        - id: payment-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/payment/**
+          filters:
+            - JwtCookieToHeaderFilter
+            - StripPrefix=1
+
+
 
   codec:
     max-in-memory-size: 50MB

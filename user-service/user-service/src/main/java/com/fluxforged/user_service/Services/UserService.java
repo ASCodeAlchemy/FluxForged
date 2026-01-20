@@ -44,7 +44,9 @@ user.setFullName(userDTO.getFullName());
 user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
 user.setEmail(userDTO.getEmail());
     user.setRole(Roles.valueOf(userDTO.getRole().toUpperCase()));
-
+user.setBio(userDTO.getBio());
+user.setCurrentMembership("BASIC");
+user.setStatus("ACTIVE");
 user.setCreatedAt(new Timestamp(System.currentTimeMillis()));
 user.setUsername(userDTO.getUsername());
 
@@ -65,19 +67,6 @@ return user;
         return dto;
 
     }
-
-
-    public ResponseDTO signIn(UserDTO userDTO) {
-        Users user = userRepo.findByEmail(userDTO.getEmail())
-                .orElseThrow(() -> new UsernameNotFoundException("Invalid Email"));
-
-        if (!passwordEncoder.matches(userDTO.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("Invalid Password");
-        }
-
-        return new ResponseDTO("Password verified. OTP sent.");
-    }
-
 
     public UserProfileDTO getProfile(String email) {
 

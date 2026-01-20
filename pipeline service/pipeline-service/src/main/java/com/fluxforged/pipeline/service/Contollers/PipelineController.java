@@ -1,7 +1,9 @@
 package com.fluxforged.pipeline.service.Contollers;
 
+import com.fluxforged.pipeline.service.PaymentClient;
 import com.fluxforged.pipeline.service.Services.PipelineService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,10 +13,12 @@ import org.springframework.web.multipart.MultipartFile;
 public class PipelineController {
 
     private final PipelineService pipelineService;
+    private final PaymentClient paymentClient;
 
     @Autowired
-    public PipelineController(PipelineService pipelineService) {
+    public PipelineController(PipelineService pipelineService,PaymentClient paymentClient) {
         this.pipelineService = pipelineService;
+        this.paymentClient=paymentClient;
     }
 
     @PostMapping("/fetch-github")
@@ -23,8 +27,18 @@ public class PipelineController {
             @RequestParam String repoUrl
     ) {
         try {
+            // 1. Check subscription status via Feign Client
+            boolean isSubscribed = paymentClient.isUserSubscribed(email);
+
+            if (!isSubscribed) {
+                return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED)
+                        .body("Access Denied: A Pro or Enterprise subscription is required to fetch from GitHub.");
+            }
+
+            // 2. If subscribed, proceed with the pipeline
             pipelineService.initiateFromGithub(repoUrl, email);
             return ResponseEntity.ok("GitHub Pipeline Started for " + email);
+
         } catch (Exception ex) {
             return handleException(ex);
         }
@@ -35,12 +49,16 @@ public class PipelineController {
             @RequestHeader("X-User-Email") String email,
             @RequestParam("file") MultipartFile file
     ) {
-        try {
-            pipelineService.initiateFromZip(file, email);
-            return ResponseEntity.ok("Zip Upload Pipeline Started for " + email);
-        } catch (Exception ex) {
-            return handleException(ex);
+        boolean isSubscribed = paymentClient.isUserSubscribed(email);
+
+        if (!isSubscribed) {
+            return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED)
+                    .body("Access Denied: Please subscribe to a Pro or Enterprise plan to run pipelines.");
         }
+
+        pipelineService.initiateFromZip(file, email);
+        return ResponseEntity.ok("Pipeline started successfully!");
+
     }
 
     private ResponseEntity<String> handleException(Exception ex) {

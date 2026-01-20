@@ -18,6 +18,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 public class UserController {
 
@@ -51,13 +54,9 @@ public class UserController {
         if (userService.emailExists(userDTO.getEmail())) {
             return ResponseEntity.badRequest().body(new ResponseDTO("Email already registered"));
         }
-
-
         pendingUserService.savePendingUser(userDTO);
-
-
         String otp = otpService.generateOtp(userDTO.getEmail());
-        emailService.sendVerificationEmail(userDTO.getEmail(), otp);
+        emailService.sendVerificationEmail(userDTO.getEmail(), otp, "REGISTER_OTP");
 
         return ResponseEntity.ok(new ResponseDTO("OTP sent to email for verification"));
     }
@@ -79,21 +78,19 @@ public class UserController {
             return ResponseEntity.badRequest().body(new ResponseDTO("Registration session expired"));
         }
 
-        // 1. Core Logic: Save user to DB
         userService.signUp(pendingUser);
         pendingUserService.remove(email);
         otpService.removeOtp(otp);
 
-        // 2. TRIGGER: Send the Welcome Email Event
-        AuthEvent welcomeEvent = new AuthEvent();
-        welcomeEvent.setEmail(email);
-        welcomeEvent.setType("REGISTER_SUCCESS");
+        Map<String, Object> welcomeEvent = new HashMap<>();
+        welcomeEvent.put("email", email);
 
-        // We send this to the "auth-events" topic
+        welcomeEvent.put("type", "REGISTER_SUCCESS");
         kafkaTemplate.send("auth-events", email, welcomeEvent);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(new ResponseDTO("User registered successfully"));
     }
+
 
 
     @PostMapping("/auth/login")
@@ -102,10 +99,8 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ResponseDTO("Email not registered"));
         }
 
-        // Generate OTP and send email
         String otp = otpService.generateOtp(userDTO.getEmail());
-        emailService.sendVerificationEmail(userDTO.getEmail(), otp);
-
+        emailService.sendVerificationEmail(userDTO.getEmail(), otp, "LOGIN_OTP");
         return ResponseEntity.ok(new ResponseDTO("OTP sent to email"));
     }
 
@@ -135,11 +130,6 @@ public class UserController {
     }
 
 
-//    @GetMapping("/my-profile")
-//    public ResponseEntity<?> profile(@RequestHeader("X-User-Email") String email) {
-//        return ResponseEntity.ok(email);
-//    }
-
     @GetMapping("/my-profile")
     public ResponseEntity<UserProfileDTO> getProfile(@AuthenticationPrincipal UserDetails userDetails) {
         if (userDetails == null) return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
@@ -163,5 +153,23 @@ public class UserController {
                                                       @RequestBody ChangePasswordDTO changePasswordDTO) {
         if (userDetails == null) return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         return new ResponseEntity<>(userService.changePassword(userDetails.getUsername(), changePasswordDTO), HttpStatus.OK);
+    }
+
+    @PostMapping("/auth/resend-otp")
+    public ResponseEntity<ResponseDTO> resendOtp(@RequestParam String email, @RequestParam String type) throws Exception {
+        boolean isRegistration = "REGISTER_OTP".equalsIgnoreCase(type);
+
+        if (isRegistration && pendingUserService.getPendingUser(email) == null) {
+            return ResponseEntity.badRequest().body(new ResponseDTO("No pending registration found for this email."));
+        }
+
+        if (!isRegistration && !userService.emailExists(email)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ResponseDTO("Email not registered."));
+        }
+
+        String newOtp = otpService.generateOtp(email);
+        emailService.sendVerificationEmail(email, newOtp, type.toUpperCase());
+
+        return ResponseEntity.ok(new ResponseDTO("A new OTP has been sent to " + email));
     }
 }

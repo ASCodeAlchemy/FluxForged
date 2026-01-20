@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #7289da; padding-bottom: 10px; }
+        .pro-badge { background-color: #7289da; color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; }
+        .details { margin: 20px 0; line-height: 1.6; }
+        .footer { font-size: 12px; color: #777; text-align: center; margin-top: 30px; }
+        .button { background-color: #2ecc71; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>FluxForged</h1>
+        <span class="pro-badge">PRO PLAN ACTIVATED</span>
+    </div>
+    <div class="details">
+        <p>Hi <strong>${email}</strong>,</p>
+        <p>Your payment was successful! Your account has been upgraded to <strong>Pro</strong>.</p>
+        <ul>
+            <li>🚀 <strong>Unlimited Pipeline Runs</strong></li>
+            <li>⚡ <strong>Priority Build Queue</strong></li>
+            <li>📦 <strong>10GB MinIO Storage</strong></li>
+        </ul>
+        <p>Total Paid: <strong>₹500.00</strong></p>
+        <center><a href="http://localhost:5173/dashboard" class="button">Go to Dashboard</a></center>
+    </div>
+    <div class="footer">
+        <p>Thank you for choosing FluxForged! <br> If you didn't make this purchase, contact support@fluxforged.com</p>
+    </div>
+</div>
+</body>
+</html>

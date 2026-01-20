@@ -1,5 +1,7 @@
 package com.fluxforged.pipeline.service.Services;
 
+import com.fluxforged.pipeline.service.PaymentClient;
+import com.fluxforged.pipeline.service.PaymentRequiredException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,13 +14,30 @@ public class PipelineService {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final StorageService storageService;
+    private final PaymentClient paymentClient;
 
-    public PipelineService(KafkaTemplate<String, Object> kafkaTemplate, StorageService storageService) {
+    public PipelineService(KafkaTemplate<String, Object> kafkaTemplate, StorageService storageService,PaymentClient paymentClient) {
         this.kafkaTemplate = kafkaTemplate;
         this.storageService = storageService;
+        this.paymentClient=paymentClient;
+    }
+
+    public void startBuild(String email) {
+        boolean isSubscribed = paymentClient.isUserSubscribed(email);
+
+        if (!isSubscribed) {
+
+            throw new RuntimeException("Please upgrade to Pro.");
+        }
+
+        System.out.println("Payment verified! Starting build for: " + email);
     }
 
     public void initiateFromZip(MultipartFile file, String email) {
+        if (!paymentClient.isUserSubscribed(email)) {
+            throw new PaymentRequiredException("Upgrade to Pro to run build pipelines.");
+        }
+
         try {
             String runId = UUID.randomUUID().toString();
             String storageKey = storageService.saveFile(file);
@@ -31,6 +50,10 @@ public class PipelineService {
     }
 
     public void initiateFromGithub(String repoUrl, String email) {
+        if (!paymentClient.isUserSubscribed(email)) {
+            throw new PaymentRequiredException("Upgrade to Pro to run build pipelines.");
+        }
+
         try {
             String runId = UUID.randomUUID().toString();
             String zipUrl = convertToZipUrl(repoUrl);
