@@ -26,8 +26,8 @@ FluxForged is built on a distributed microservices architecture, ensuring high a
 | Category | Technology |
 | :--- | :--- |
 | **Backend** | Java 17+, Spring Boot 3.x, Spring Cloud (Eureka, OpenFeign) |
-| **Messaging** | Apache Kafka (Event-driven orchestration) |
-| **Database** | PostgreSQL (Primary), Redis (OTP & Session caching) |
+| **Messaging** | Apache Kafka (Event-driven orchestration) | Apache ZooKeeper |
+| **Database** | PostgreSQL (Primary), Redis (OTP & Session caching) | MinIO (Storing Zip Files) |
 | **Containerization**| Docker (Isolated builds), Docker Java API |
 | **Security** | Spring Security, JWT (Stateless Authentication) |
 | **Payments** | Razorpay API & Webhooks |
