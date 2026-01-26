@@ -1,5 +1,6 @@
 package com.fluxforged.user_service.Config;
 
+import com.fluxforged.user_service.Utils.OAuth2LoginSuccessHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,12 +39,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler) throws Exception {
         return http
                 .cors(cors -> {
                 })
                 .csrf(customizer -> customizer.disable())
-                .authorizeHttpRequests(request -> request.requestMatchers("/register","/auth/login","/verify-otp","/verify-register-otp").permitAll().anyRequest().authenticated())
+                .authorizeHttpRequests(request -> request.requestMatchers("/register","/auth/login","/verify-otp","/verify-register-otp","/oauth/login").permitAll().anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
                 .authenticationProvider(authProvider())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -51,6 +52,7 @@ public class SecurityConfig {
                 .logout(logout -> logout.logoutUrl("/logout").deleteCookies("jwt").logoutSuccessHandler((request, response, authentication) -> {
                         })
                 )
+                .oauth2Login(oauth->oauth.successHandler(oAuth2LoginSuccessHandler))
                 .build();
     }
 
@@ -73,20 +75,4 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(true);
-        config.addAllowedOrigin("http://localhost:5173");
-        config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
-
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-
-
-        return source;
-
-    }
 }

@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
+
 public class UserController {
 
     private final UserService userService;

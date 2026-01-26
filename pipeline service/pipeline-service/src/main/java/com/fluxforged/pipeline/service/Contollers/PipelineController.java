@@ -27,7 +27,7 @@ public class PipelineController {
             @RequestParam String repoUrl
     ) {
         try {
-            // 1. Check subscription status via Feign Client
+
             boolean isSubscribed = paymentClient.isUserSubscribed(email);
 
             if (!isSubscribed) {
@@ -35,7 +35,7 @@ public class PipelineController {
                         .body("Access Denied: A Pro or Enterprise subscription is required to fetch from GitHub.");
             }
 
-            // 2. If subscribed, proceed with the pipeline
+
             pipelineService.initiateFromGithub(repoUrl, email);
             return ResponseEntity.ok("GitHub Pipeline Started for " + email);
 
